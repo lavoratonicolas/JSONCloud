@@ -1,45 +1,13 @@
-from flask import Flask, request, jsonify
-from psycopg2 import connect, errors, extras
-from flask_bcrypt import Bcrypt
-
-from dotenv import load_dotenv
-import os
-
-app = Flask(__name__)
-bcrypt = Bcrypt(app)
-
-load_dotenv()
-
-host = os.getenv("DB_HOST")
-port = os.getenv("DB_PORT")
-dbname = os.getenv("DB_NAME")
-user = os.getenv("DB_USER")
-password = os.getenv("DB_PASSWORD")
+from flask import request, jsonify, Blueprint
+from psycopg2 import extras, errors
+from ..database import *
+from ..extension import bcrypt
 
 
-def get_connection():
-    try:
-        return connect(
-            host=host, port=port, dbname=dbname, user=user, password=password
-        )
-    except Exception as e:
-        print(f"Unexpected error occurred: {e}")
-        return None
+users_bp = Blueprint("users_bp", __name__)
 
 
-@app.get("/")
-def home():
-    db_connection = get_connection()
-    cursor = db_connection.cursor()
-
-    cursor.execute("Select 1+1")
-    result = cursor.fetchone()
-
-    print(result)
-    return "Hello word"
-
-
-@app.get("/api/users")
+@users_bp.get("/api/users")
 def get_users():
 
     db_connection = get_connection()
@@ -83,7 +51,7 @@ def get_users():
         db_connection.close()
 
 
-@app.post("/api/users")
+@users_bp.post("/api/users")
 def create_user():
 
     new_user = request.get_json()
@@ -169,7 +137,7 @@ def create_user():
         db_connection.close()
 
 
-@app.delete("/api/users/<id>")
+@users_bp.delete("/api/users/<id>")
 def delete_user(id):
 
     db_connection = get_connection()
@@ -220,7 +188,7 @@ def delete_user(id):
         db_connection.close()
 
 
-@app.put("/api/users/<id>")
+@users_bp.put("/api/users/<id>")
 def update_user(id):
 
     new_user = request.get_json()
@@ -308,7 +276,7 @@ def update_user(id):
         db_connection.close()
 
 
-@app.get("/api/users/<id>")
+@users_bp.get("/api/users/<id>")
 def get_user(id):
 
     db_connection = get_connection()
@@ -355,7 +323,3 @@ def get_user(id):
     finally:
         cursor.close()
         db_connection.close()
-
-
-if __name__ == "__main__":
-    app.run(debug=True)
