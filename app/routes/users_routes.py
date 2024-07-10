@@ -2,12 +2,13 @@ from flask import request, jsonify, Blueprint
 from psycopg2 import extras, errors
 from ..database import *
 from ..extension import bcrypt
+from ..querys.users_querys import *
 
 
 users_bp = Blueprint("users_bp", __name__)
 
 
-@users_bp.get("/api/users")
+@users_bp.get("/api/users/")
 def get_users():
 
     db_connection = get_connection()
@@ -20,12 +21,7 @@ def get_users():
     try:
         cursor = db_connection.cursor(cursor_factory=extras.RealDictCursor)
 
-        cursor.execute(
-            """
-            SELECT id, username, email
-            FROM users
-            """
-        )
+        cursor.execute(get_users_query)
 
         users = cursor.fetchall()
 
@@ -51,7 +47,7 @@ def get_users():
         db_connection.close()
 
 
-@users_bp.post("/api/users")
+@users_bp.post("/api/users/")
 def create_user():
 
     new_user = request.get_json()
@@ -79,11 +75,7 @@ def create_user():
         cursor = db_connection.cursor(cursor_factory=extras.RealDictCursor)
 
         cursor.execute(
-            """
-            INSERT INTO users (username, email, password_hash)
-            VALUES (%s, %s, %s)
-            RETURNING id, username, email
-            """,
+            create_user_query,
             (
                 username,
                 email,
@@ -137,7 +129,7 @@ def create_user():
         db_connection.close()
 
 
-@users_bp.delete("/api/users/<id>")
+@users_bp.delete("/api/users/<id>/")
 def delete_user(id):
 
     db_connection = get_connection()
@@ -151,12 +143,7 @@ def delete_user(id):
         cursor = db_connection.cursor(cursor_factory=extras.RealDictCursor)
 
         cursor.execute(
-            """
-            DELETE
-            FROM users
-            WHERE id = %s
-            RETURNING id, username, email
-            """,
+            delete_user_query,
             (id,),
         )
 
@@ -188,7 +175,7 @@ def delete_user(id):
         db_connection.close()
 
 
-@users_bp.put("/api/users/<id>")
+@users_bp.put("/api/users/<id>/")
 def update_user(id):
 
     new_user = request.get_json()
@@ -216,12 +203,7 @@ def update_user(id):
         cursor = db_connection.cursor(cursor_factory=extras.RealDictCursor)
 
         cursor.execute(
-            """
-            UPDATE users
-            SET username = %s, email = %s, password_hash = %s
-            WHERE id = %s
-            RETURNING id, username, email
-            """,
+            update_user_query,
             (
                 username,
                 email,
@@ -276,7 +258,7 @@ def update_user(id):
         db_connection.close()
 
 
-@users_bp.get("/api/users/<id>")
+@users_bp.get("/api/users/<id>/")
 def get_user(id):
 
     db_connection = get_connection()
@@ -290,11 +272,7 @@ def get_user(id):
         cursor = db_connection.cursor(cursor_factory=extras.RealDictCursor)
 
         cursor.execute(
-            """
-            SELECT id, username, email
-            FROM users
-            WHERE id = %s
-            """,
+            get_user_query,
             (id,),
         )
 
